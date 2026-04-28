@@ -10,6 +10,7 @@ import { SheetsClient } from '../sheets/client.ts';
 import { registerDriveRoutes } from './drive-routes.ts';
 import { FileCache } from './file-cache.ts';
 import { registerMcpRoutes } from './routes.ts';
+import { augmentMcpWithSkillResource } from './with-skill-resource.ts';
 
 const repoRoot = resolve(import.meta.dir, '../..');
 const envIdx = process.argv.indexOf('--env-path');
@@ -75,7 +76,15 @@ Best practices:
 - Use post_append for daily reporting rows such as ad spend snapshots.
 - Use post_headers_ensure before the first report append.
 - Use get_rows_find or get_rows_last before appending when dedupe matters.
-- Use USER_ENTERED when you want spreadsheet formulas/dates to be interpreted; use RAW for exact values.`,
+- Use USER_ENTERED when you want spreadsheet formulas/dates to be interpreted; use RAW for exact values.
+
+MCP skill resource URI: skill://mcp-google-drive/workflow (markdown; use resources/read).`,
+});
+
+augmentMcpWithSkillResource(mcp, {
+    serverName: 'mcp-google-drive',
+    repoRootAbs: repoRoot,
+    skillRelativePath: '.claude/skills/mcp-google-drive/SKILL.md',
 });
 
 if (process.argv.includes('--stdio')) {
