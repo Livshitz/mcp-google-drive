@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@livx.cc/mcp-google-sheets",
+      "name": "@livx.cc/mcp-google-drive",
       "dependencies": {
         "dotenv": "^16.4.7",
         "edge.libx.js": "^0.3.4",

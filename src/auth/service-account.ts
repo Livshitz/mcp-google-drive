@@ -2,7 +2,11 @@ import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
 import { JwtHelper } from 'edge.libx.js/build/helpers/jwt.js';
 
-export const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
+export const DEFAULT_GOOGLE_SCOPES = [
+    'https://www.googleapis.com/auth/drive.metadata.readonly',
+    'https://www.googleapis.com/auth/drive.readonly',
+    'https://www.googleapis.com/auth/spreadsheets',
+].join(' ');
 
 export function loadServiceAccount(value: string): any {
     if (value.trim().startsWith('{')) return JSON.parse(value);
@@ -11,7 +15,7 @@ export function loadServiceAccount(value: string): any {
     return JSON.parse(readFileSync(filePath, 'utf-8'));
 }
 
-export async function getServiceAccountAccessToken(serviceAccountValue: string, scope = SHEETS_SCOPE): Promise<string> {
+export async function getServiceAccountAccessToken(serviceAccountValue: string, scope = DEFAULT_GOOGLE_SCOPES): Promise<string> {
     const serviceAccount = loadServiceAccount(serviceAccountValue);
     return await JwtHelper.generateOAuth(serviceAccount, scope);
 }

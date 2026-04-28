@@ -7,6 +7,7 @@ export interface Config {
     clientSecret?: string;
     oauthRedirectUri: string;
     readOnly: boolean;
+    scopes: string;
     serviceAccount?: string;
     spreadsheetId?: string;
     tokenPath: string;
@@ -25,13 +26,18 @@ function authMode(value: string | undefined): AuthMode {
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     return {
         authMode: authMode(env.GOOGLE_AUTH_MODE),
-        cacheDir: env.MCP_CACHE_DIR || '.mcp-google-sheets/cache',
+        cacheDir: env.MCP_CACHE_DIR || '.mcp-google-drive/cache',
         clientId: env.GOOGLE_CLIENT_ID,
         clientSecret: env.GOOGLE_CLIENT_SECRET,
         oauthRedirectUri: env.GOOGLE_REDIRECT_URI || 'http://localhost:3459/oauth2callback',
         readOnly: bool(env.MCP_READONLY, false),
+        scopes: env.GOOGLE_SCOPES || [
+            'https://www.googleapis.com/auth/drive.metadata.readonly',
+            'https://www.googleapis.com/auth/drive.readonly',
+            'https://www.googleapis.com/auth/spreadsheets',
+        ].join(' '),
         serviceAccount: env.GOOGLE_SERVICE_ACCOUNT,
         spreadsheetId: env.GOOGLE_SPREADSHEET_ID,
-        tokenPath: env.GOOGLE_TOKEN_PATH || '.mcp-google-sheets/token.json',
+        tokenPath: env.GOOGLE_TOKEN_PATH || '.mcp-google-drive/token.json',
     };
 }

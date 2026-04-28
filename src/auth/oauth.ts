@@ -1,7 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { createServer } from 'http';
-import { SHEETS_SCOPE } from './service-account.ts';
 import type { Config } from '../config.ts';
 
 export interface OAuthToken {
@@ -39,7 +38,7 @@ async function exchangeToken(params: Record<string, string>): Promise<OAuthToken
 export async function getOAuthAccessToken(cfg: Config): Promise<string> {
     const { clientId, clientSecret } = requireOAuthConfig(cfg);
     const path = tokenFile(cfg);
-    if (!existsSync(path)) throw new Error(`OAuth token file not found: ${path}. Run "mcp-google-sheets auth" first.`);
+    if (!existsSync(path)) throw new Error(`OAuth token file not found: ${path}. Run "mcp-google-drive auth" first.`);
 
     const token = JSON.parse(readFileSync(path, 'utf-8')) as OAuthToken;
     if (!token.refresh_token) throw new Error(`OAuth token file has no refresh_token: ${path}`);
@@ -66,7 +65,7 @@ export async function createOAuthToken(cfg: Config): Promise<string> {
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('access_type', 'offline');
     authUrl.searchParams.set('prompt', 'consent');
-    authUrl.searchParams.set('scope', SHEETS_SCOPE);
+    authUrl.searchParams.set('scope', cfg.scopes);
 
     const code = await new Promise<string>((resolveCode, reject) => {
         const server = createServer((req, res) => {
@@ -89,7 +88,7 @@ export async function createOAuthToken(cfg: Config): Promise<string> {
         });
 
         server.listen(port, () => {
-            console.log(`Open this URL to authorize Google Sheets access:\n${authUrl.toString()}`);
+            console.log(`Open this URL to authorize Google Drive access:\n${authUrl.toString()}`);
             Bun.spawn(['open', authUrl.toString()]);
         });
     });

@@ -1,6 +1,6 @@
 {
 	"mcpServers": {
-		"mcp-google-sheets": {
+		"mcp-google-drive": {
 			"type": "stdio",
 			"command": "bun",
 			"args": ["run", "src/mcp/cli.ts", "--stdio"],

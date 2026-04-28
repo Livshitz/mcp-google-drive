@@ -1,7 +1,7 @@
 {
-  "name": "@livx.cc/mcp-google-sheets",
-  "version": "0.1.1",
-  "description": "Google Sheets MCP server and reusable library",
+  "name": "@livx.cc/mcp-google-drive",
+  "version": "0.2.0",
+  "description": "Google Drive and Sheets MCP server and reusable library",
   "license": "MIT",
   "engines": {
     "bun": ">=1.0.0"
@@ -23,7 +23,7 @@
     "./mcp": "./src/mcp/cli.ts"
   },
   "bin": {
-    "mcp-google-sheets": "./src/mcp/cli.ts"
+    "mcp-google-drive": "./src/mcp/cli.ts"
   },
   "scripts": {
     "test": "bun test",
