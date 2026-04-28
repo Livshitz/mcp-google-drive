@@ -1,0 +1,11 @@
+{
+	"mcpServers": {
+		"mcp-google-sheets": {
+			"type": "stdio",
+			"command": "bun",
+			"args": ["run", "src/mcp/cli.ts", "--stdio"],
+			"cwd": "${workspaceFolder}",
+			"envFile": "${workspaceFolder}/.env"
+		}
+	}
+}
