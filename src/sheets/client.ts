@@ -24,6 +24,8 @@ export class SheetsClient {
     async getMeta(spreadsheetId: string) {
         const url = this.url(spreadsheetId);
         url.searchParams.set('includeGridData', 'false');
+        // Minimal field mask: full spreadsheet metadata can trigger sporadic 500 INTERNAL on large/busy files.
+        url.searchParams.set('fields', 'sheets.properties(sheetId,title,gridProperties(rowCount,columnCount))');
         return await this.request(url);
     }
 
@@ -168,21 +170,35 @@ export class SheetsClient {
     }
 
     private async request(url: URL, options: { method?: string; body?: any } = {}) {
-        const token = await this.getAccessToken();
-        const res = await fetch(url, {
-            method: options.method || 'GET',
-            headers: {
-                authorization: `Bearer ${token}`,
-                'content-type': 'application/json',
-            },
-            body: options.body == null ? undefined : JSON.stringify(options.body),
-        });
-        const data = await res.json().catch(() => null);
-        if (!res.ok) {
+        const maxAttempts = 5;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const token = await this.getAccessToken();
+            const res = await fetch(url, {
+                method: options.method || 'GET',
+                headers: {
+                    authorization: `Bearer ${token}`,
+                    'content-type': 'application/json',
+                },
+                body: options.body == null ? undefined : JSON.stringify(options.body),
+            });
+            const data = await res.json().catch(() => null);
+            if (res.ok) return data;
+
             const message = data?.error?.message || data?.error || `Google Sheets API failed (${res.status})`;
+            const retriable =
+                res.status === 429 ||
+                res.status === 500 ||
+                res.status === 502 ||
+                res.status === 503 ||
+                /internal error/i.test(String(message));
+            if (retriable && attempt < maxAttempts - 1) {
+                const delay = Math.min(32_000, 800 * 2 ** attempt + Math.random() * 400);
+                await new Promise((r) => setTimeout(r, delay));
+                continue;
+            }
             throw Object.assign(new Error(message), { status: res.status, details: data });
         }
-        return data;
+        throw new Error('Google Sheets API: exhausted retries');
     }
 }
 
