@@ -15,7 +15,7 @@ export function loadServiceAccount(value: string): any {
     return JSON.parse(readFileSync(filePath, 'utf-8'));
 }
 
-export async function getServiceAccountAccessToken(serviceAccountValue: string, scope = DEFAULT_GOOGLE_SCOPES): Promise<string> {
+export async function getServiceAccountAccessToken(serviceAccountValue: string, scope = DEFAULT_GOOGLE_SCOPES, sub?: string): Promise<string> {
     const serviceAccount = loadServiceAccount(serviceAccountValue);
-    return await JwtHelper.generateOAuth(serviceAccount, scope);
+    return await JwtHelper.generateOAuth(serviceAccount, scope, sub ? { sub } : undefined);
 }

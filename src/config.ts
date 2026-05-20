@@ -8,6 +8,7 @@ export interface Config {
     oauthRedirectUri: string;
     readOnly: boolean;
     scopes: string;
+    impersonateEmail?: string;
     serviceAccount?: string;
     spreadsheetId?: string;
     tokenPath: string;
@@ -36,6 +37,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
             'https://www.googleapis.com/auth/drive.readonly',
             'https://www.googleapis.com/auth/spreadsheets',
         ].join(' '),
+        impersonateEmail: env.AGENT_GMAIL_ADDRESS || env.GMAIL_USER_EMAIL,
         serviceAccount: env.GOOGLE_SERVICE_ACCOUNT,
         spreadsheetId: env.GOOGLE_SPREADSHEET_ID,
         tokenPath: env.GOOGLE_TOKEN_PATH || '.mcp-google-drive/token.json',
