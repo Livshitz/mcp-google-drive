@@ -3,13 +3,7 @@ import type { RouterWrapper } from 'edge.libx.js';
 import type { Config } from '../config.ts';
 import type { SheetsClient } from '../sheets/client.ts';
 import type { FileCache } from './file-cache.ts';
-
-const q = (v: any, fallback = ''): string => (Array.isArray(v) ? v[0] : v) ?? fallback;
-
-function required(value: string | undefined, name: string): string {
-    if (!value) throw Object.assign(new Error(`${name} is required`), { status: 400 });
-    return value;
-}
+import { q, required } from './utils.ts';
 
 function parseRanges(value: string): string[] {
     return value

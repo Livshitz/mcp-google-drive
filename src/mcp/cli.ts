@@ -7,9 +7,11 @@ import { createOAuthToken, getAccessToken } from '../auth/index.ts';
 import { loadConfig } from '../config.ts';
 import { DriveClient } from '../drive/client.ts';
 import { SheetsClient } from '../sheets/client.ts';
+import { SlidesClient } from '../slides/client.ts';
 import { registerDriveRoutes } from './drive-routes.ts';
 import { FileCache } from './file-cache.ts';
 import { registerMcpRoutes } from './routes.ts';
+import { registerSlidesRoutes } from './slides-routes.ts';
 import { augmentMcpWithSkillResource } from './with-skill-resource.ts';
 
 const repoRoot = resolve(import.meta.dir, '../..');
@@ -28,11 +30,13 @@ if (process.argv.includes('auth')) {
 const tokenProvider = () => getAccessToken(cfg);
 const driveClient = new DriveClient(tokenProvider);
 const sheetsClient = new SheetsClient(tokenProvider);
+const slidesClient = new SlidesClient(tokenProvider);
 const fileCache = new FileCache(process.env.MCP_CACHE_DIR || resolve(repoRoot, cfg.cacheDir));
 
 const rw = RouterWrapper.getNew('/api');
 registerDriveRoutes(rw, driveClient, fileCache);
 registerMcpRoutes(rw, sheetsClient, fileCache, cfg);
+registerSlidesRoutes(rw, slidesClient, fileCache);
 
 const pkgVersion = (JSON.parse(readFileSync(resolve(repoRoot, 'package.json'), 'utf-8')) as {
     version: string;
@@ -41,7 +45,7 @@ const pkgVersion = (JSON.parse(readFileSync(resolve(repoRoot, 'package.json'), '
 const mcp = rw.asMCP({
     name: 'mcp-google-drive',
     version: pkgVersion,
-    instructions: `You are connected to Google Drive and Google Sheets APIs.
+    instructions: `You are connected to Google Drive, Google Sheets, and Google Slides APIs.
 ${cfg.readOnly ? 'Write operations are DISABLED (MCP_READONLY=true).' : 'Write operations are enabled (set MCP_READONLY=true to make this server read-only).'}
 ${cfg.spreadsheetId ? `Default spreadsheetId: ${cfg.spreadsheetId}.` : 'No default spreadsheetId is configured; pass spreadsheetId to each tool.'}
 Auth mode: ${cfg.authMode}.
@@ -68,6 +72,15 @@ Tools:
 - get_rows_last: read back the last N rows from a range for dedupe checks.
 - get_rows_find: find exact row matches by header name or column index.
 - get_cache: re-open metadata and capped preview for a cached result file.
+- post_slides_create: create a new Google Slides presentation.
+- get_slides_get: get presentation metadata and slide IDs.
+- post_slides_add_slide: add a slide with optional layout.
+- post_slides_set_text: set text in a slide placeholder (TITLE, SUBTITLE, BODY).
+- post_slides_insert_text_box: insert a positioned text box.
+- post_slides_insert_image: insert an image by URL.
+- post_slides_set_background: set slide background color.
+- post_slides_set_speaker_notes: set speaker notes.
+- post_slides_delete: delete a slide.
 
 Best practices:
 - Service accounts only see files explicitly shared with them (or in shared folders they can access).
@@ -77,6 +90,9 @@ Best practices:
 - Use post_headers_ensure before the first report append.
 - Use get_rows_find or get_rows_last before appending when dedupe matters.
 - Use USER_ENTERED when you want spreadsheet formulas/dates to be interpreted; use RAW for exact values.
+- For Slides: create presentation first, then add slides with layout, then set text/images on each.
+- Slides layouts with placeholders: TITLE (has CENTERED_TITLE + SUBTITLE), TITLE_AND_BODY (has TITLE + BODY), SECTION_HEADER (has TITLE + BODY).
+- Position/size units default to PT (points). Use { x, y } for position and { width, height } for size.
 
 MCP skill resource URI: skill://mcp-google-drive/workflow (markdown; use resources/read).`,
 });

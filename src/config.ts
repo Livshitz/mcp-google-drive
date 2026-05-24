@@ -36,6 +36,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
             'https://www.googleapis.com/auth/drive.metadata.readonly',
             'https://www.googleapis.com/auth/drive.readonly',
             'https://www.googleapis.com/auth/spreadsheets',
+            'https://www.googleapis.com/auth/presentations',
         ].join(' '),
         impersonateEmail: env.AGENT_GMAIL_ADDRESS || env.GMAIL_USER_EMAIL,
         serviceAccount: env.GOOGLE_SERVICE_ACCOUNT,

@@ -2,13 +2,7 @@ import type { IRequest } from 'itty-router';
 import type { RouterWrapper } from 'edge.libx.js';
 import type { DriveClient } from '../drive/client.ts';
 import type { FileCache } from './file-cache.ts';
-
-const q = (v: any, fallback = ''): string => (Array.isArray(v) ? v[0] : v) ?? fallback;
-
-function required(value: string | undefined, name: string): string {
-    if (!value) throw Object.assign(new Error(`${name} is required`), { status: 400 });
-    return value;
-}
+import { q, required } from './utils.ts';
 
 export function registerDriveRoutes(rw: RouterWrapper, client: DriveClient, fileCache: FileCache) {
     rw.router.get('/drive/search', async (req: IRequest) => {

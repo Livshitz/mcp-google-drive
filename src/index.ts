@@ -16,3 +16,15 @@ export type {
     ValueRange,
     WriteValuesOptions,
 } from './sheets/types.ts';
+export { SlidesClient } from './slides/client.ts';
+export type {
+    AddSlideOptions,
+    CreatePresentationOptions,
+    DeleteSlideOptions,
+    GetPresentationOptions,
+    InsertImageOptions,
+    InsertTextBoxOptions,
+    SetBackgroundOptions,
+    SetSlideTextOptions,
+    SetSpeakerNotesOptions,
+} from './slides/types.ts';
