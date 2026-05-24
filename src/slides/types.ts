@@ -91,3 +91,45 @@ export type PlaceholderType =
     | 'BODY'
     | 'CENTERED_TITLE'
     | 'SLIDE_NUMBER';
+
+export interface FormatTextOptions {
+    presentationId: string;
+    objectId: string;
+    startIndex?: number;
+    endIndex?: number;
+    style: TextStyle;
+}
+
+export interface TextStyle {
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    fontSize?: number;
+    fontFamily?: string;
+    foregroundColor?: RgbColor;
+    backgroundColor?: RgbColor;
+    link?: string;
+}
+
+export interface GetMastersOptions {
+    presentationId: string;
+}
+
+export interface ApplyMasterOptions {
+    presentationId: string;
+    slideId: string;
+    layoutId: string;
+}
+
+export interface SetPageSizeOptions {
+    presentationId: string;
+    width: number;
+    height: number;
+    unit?: DimensionUnit;
+}
+
+export interface DuplicateSlideOptions {
+    presentationId: string;
+    slideId: string;
+    insertionIndex?: number;
+}

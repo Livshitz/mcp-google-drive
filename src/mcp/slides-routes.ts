@@ -83,6 +83,44 @@ export function registerSlidesRoutes(rw: RouterWrapper, client: SlidesClient, fi
         return fileCache.write('slides_set_speaker_notes', `${body.presentationId}_${body.slideId}`, data);
     });
 
+    rw.router.post('/slides/format_text', async (req: IRequest) => {
+        const body = await req.json();
+        const data = await client.formatText({
+            presentationId: required(body.presentationId, 'presentationId'),
+            objectId: required(body.objectId, 'objectId'),
+            startIndex: body.startIndex ?? undefined,
+            endIndex: body.endIndex ?? undefined,
+            style: body.style || {},
+        });
+        return fileCache.write('slides_format_text', `${body.presentationId}_${body.objectId}`, data);
+    });
+
+    rw.router.get('/slides/masters', async (req: IRequest) => {
+        const presentationId = required(q(req.query.presentationId), 'presentationId');
+        const data = await client.getMasters({ presentationId });
+        return fileCache.write('slides_masters', presentationId, data);
+    });
+
+    rw.router.post('/slides/apply_master', async (req: IRequest) => {
+        const body = await req.json();
+        const data = await client.applyMaster({
+            presentationId: required(body.presentationId, 'presentationId'),
+            slideId: required(body.slideId, 'slideId'),
+            layoutId: required(body.layoutId, 'layoutId'),
+        });
+        return fileCache.write('slides_apply_master', `${body.presentationId}_${body.slideId}`, data);
+    });
+
+    rw.router.post('/slides/duplicate', async (req: IRequest) => {
+        const body = await req.json();
+        const data = await client.duplicateSlide({
+            presentationId: required(body.presentationId, 'presentationId'),
+            slideId: required(body.slideId, 'slideId'),
+            insertionIndex: body.insertionIndex ?? undefined,
+        });
+        return fileCache.write('slides_duplicate', `${body.presentationId}_${body.slideId}`, data);
+    });
+
     rw.router.post('/slides/delete', async (req: IRequest) => {
         const body = await req.json();
         const data = await client.deleteSlide({
@@ -146,6 +184,34 @@ export function registerSlidesRoutes(rw: RouterWrapper, client: SlidesClient, fi
         description: 'Set speaker notes on a slide. Replaces existing notes.',
         params: {
             body: { description: 'Object with presentationId, slideId, notes (string).' },
+        },
+    });
+
+    rw.describeMCP('/slides/format_text', 'POST', {
+        description: 'Format text in a shape/text box. Apply bold, italic, font size, color, etc. Use objectId from set_text or insert_text_box responses.',
+        params: {
+            body: { description: 'Object with presentationId, objectId, optional startIndex/endIndex (omit for all text), style { bold?, italic?, underline?, fontSize? (PT), fontFamily?, foregroundColor? { red, green, blue } (0-1), backgroundColor?, link? (URL) }.' },
+        },
+    });
+
+    rw.describeMCP('/slides/masters', 'GET', {
+        description: 'List master slides and their layouts. Use layout objectIds with apply_master or add_slide.',
+        params: {
+            presentationId: { description: 'Google Slides presentation ID.' },
+        },
+    });
+
+    rw.describeMCP('/slides/apply_master', 'POST', {
+        description: 'Apply a master layout to an existing slide. Get layoutId from get_slides_masters.',
+        params: {
+            body: { description: 'Object with presentationId, slideId, layoutId (from masters response).' },
+        },
+    });
+
+    rw.describeMCP('/slides/duplicate', 'POST', {
+        description: 'Duplicate an existing slide. Useful for repeating a styled template slide.',
+        params: {
+            body: { description: 'Object with presentationId, slideId (to duplicate), optional insertionIndex.' },
         },
     });
 

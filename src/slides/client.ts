@@ -1,16 +1,22 @@
 import type {
     AddSlideOptions,
+    ApplyMasterOptions,
     CreatePresentationOptions,
     DeleteSlideOptions,
     DimensionUnit,
+    DuplicateSlideOptions,
+    FormatTextOptions,
+    GetMastersOptions,
     GetPresentationOptions,
     InsertImageOptions,
     InsertTextBoxOptions,
     Position,
     SetBackgroundOptions,
+    SetPageSizeOptions,
     SetSlideTextOptions,
     SetSpeakerNotesOptions,
     Size,
+    TextStyle,
 } from './types.ts';
 
 const SLIDES_BASE = 'https://slides.googleapis.com/v1/presentations';
@@ -150,6 +156,83 @@ export class SlidesClient {
         return { objectId: notesShape.objectId };
     }
 
+    async formatText(options: FormatTextOptions) {
+        const textRange: any = options.startIndex != null || options.endIndex != null
+            ? { type: 'FIXED_RANGE', startIndex: options.startIndex ?? 0, endIndex: options.endIndex }
+            : { type: 'ALL' };
+
+        const style = buildTextStyle(options.style);
+        const fields = buildTextStyleFields(options.style);
+
+        const requests: any[] = [
+            {
+                updateTextStyle: {
+                    objectId: options.objectId,
+                    textRange,
+                    style,
+                    fields,
+                },
+            },
+        ];
+        await this.batchUpdate(options.presentationId, requests);
+        return { objectId: options.objectId, fields };
+    }
+
+    async getMasters(options: GetMastersOptions) {
+        const data = await this.request(`${SLIDES_BASE}/${enc(options.presentationId)}`);
+        const masters = (data.masters || []).map((m: any) => ({
+            objectId: m.objectId,
+            layouts: (m.layouts || []).map((l: any) => ({
+                objectId: l.objectId,
+                name: l.layoutProperties?.displayName || l.layoutProperties?.name,
+            })),
+        }));
+        const layouts = (data.layouts || []).map((l: any) => ({
+            objectId: l.objectId,
+            name: l.layoutProperties?.displayName || l.layoutProperties?.name,
+            masterObjectId: l.layoutProperties?.masterObjectId,
+        }));
+        return { masters, layouts };
+    }
+
+    async applyMaster(options: ApplyMasterOptions) {
+        const requests: any[] = [
+            {
+                updateSlideProperties: {
+                    objectId: options.slideId,
+                    slideProperties: {
+                        layoutObjectId: options.layoutId,
+                    },
+                    fields: 'layoutObjectId',
+                },
+            },
+        ];
+        await this.batchUpdate(options.presentationId, requests);
+        return { slideId: options.slideId, layoutId: options.layoutId };
+    }
+
+    async duplicateSlide(options: DuplicateSlideOptions) {
+        const objectId = genId();
+        const requests: any[] = [
+            {
+                duplicateObject: {
+                    objectId: options.slideId,
+                    objectIds: { [options.slideId]: objectId },
+                },
+            },
+        ];
+        if (options.insertionIndex != null) {
+            requests.push({
+                updateSlidesPosition: {
+                    slideObjectIds: [objectId],
+                    insertionIndex: options.insertionIndex,
+                },
+            });
+        }
+        await this.batchUpdate(options.presentationId, requests);
+        return { slideId: objectId };
+    }
+
     async deleteSlide(options: DeleteSlideOptions) {
         const requests: any[] = [{ deleteObject: { objectId: options.slideId } }];
         await this.batchUpdate(options.presentationId, requests);
@@ -204,6 +287,32 @@ function hasText(element: any): boolean {
     const content = element?.shape?.text?.textElements;
     if (!Array.isArray(content)) return false;
     return content.some((te: any) => te.textRun?.content?.trim());
+}
+
+function buildTextStyle(style: TextStyle): any {
+    const result: any = {};
+    if (style.bold != null) result.bold = style.bold;
+    if (style.italic != null) result.italic = style.italic;
+    if (style.underline != null) result.underline = style.underline;
+    if (style.fontSize != null) result.fontSize = { magnitude: style.fontSize, unit: 'PT' };
+    if (style.fontFamily != null) result.fontFamily = style.fontFamily;
+    if (style.foregroundColor) result.foregroundColor = { opaqueColor: { rgbColor: style.foregroundColor } };
+    if (style.backgroundColor) result.backgroundColor = { opaqueColor: { rgbColor: style.backgroundColor } };
+    if (style.link) result.link = { url: style.link };
+    return result;
+}
+
+function buildTextStyleFields(style: TextStyle): string {
+    const fields: string[] = [];
+    if (style.bold != null) fields.push('bold');
+    if (style.italic != null) fields.push('italic');
+    if (style.underline != null) fields.push('underline');
+    if (style.fontSize != null) fields.push('fontSize');
+    if (style.fontFamily != null) fields.push('fontFamily');
+    if (style.foregroundColor) fields.push('foregroundColor');
+    if (style.backgroundColor) fields.push('backgroundColor');
+    if (style.link) fields.push('link');
+    return fields.join(',');
 }
 
 function buildElementProperties(pageId: string, pos: Position, size: Size, unit: DimensionUnit) {

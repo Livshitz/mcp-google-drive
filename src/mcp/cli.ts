@@ -80,6 +80,10 @@ Tools:
 - post_slides_insert_image: insert an image by URL.
 - post_slides_set_background: set slide background color.
 - post_slides_set_speaker_notes: set speaker notes.
+- post_slides_format_text: format text (bold, italic, font size, color, link).
+- get_slides_masters: list master slides and available layouts.
+- post_slides_apply_master: apply a master layout to a slide.
+- post_slides_duplicate: duplicate an existing slide.
 - post_slides_delete: delete a slide.
 
 Best practices:

@@ -19,12 +19,17 @@ export type {
 export { SlidesClient } from './slides/client.ts';
 export type {
     AddSlideOptions,
+    ApplyMasterOptions,
     CreatePresentationOptions,
     DeleteSlideOptions,
+    DuplicateSlideOptions,
+    FormatTextOptions,
+    GetMastersOptions,
     GetPresentationOptions,
     InsertImageOptions,
     InsertTextBoxOptions,
     SetBackgroundOptions,
     SetSlideTextOptions,
     SetSpeakerNotesOptions,
+    TextStyle,
 } from './slides/types.ts';
