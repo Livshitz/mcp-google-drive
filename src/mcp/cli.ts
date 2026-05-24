@@ -3,7 +3,9 @@ import { config } from 'dotenv';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { RouterWrapper } from 'edge.libx.js';
+import { authContext } from '../auth/context.ts';
 import { createOAuthToken, getAccessToken } from '../auth/index.ts';
+import type { AuthMode } from '../config.ts';
 import { loadConfig } from '../config.ts';
 import { DriveClient } from '../drive/client.ts';
 import { SheetsClient } from '../sheets/client.ts';
@@ -42,13 +44,17 @@ const pkgVersion = (JSON.parse(readFileSync(resolve(repoRoot, 'package.json'), '
     version: string;
 }).version;
 
+const hasBothAuthMethods = !!(cfg.serviceAccount && cfg.clientId);
+
+const validAuthModes = new Set(['service_account', 'oauth']);
+
 const mcp = rw.asMCP({
     name: 'mcp-google-drive',
     version: pkgVersion,
     instructions: `You are connected to Google Drive, Google Sheets, and Google Slides APIs.
 ${cfg.readOnly ? 'Write operations are DISABLED (MCP_READONLY=true).' : 'Write operations are enabled (set MCP_READONLY=true to make this server read-only).'}
 ${cfg.spreadsheetId ? `Default spreadsheetId: ${cfg.spreadsheetId}.` : 'No default spreadsheetId is configured; pass spreadsheetId to each tool.'}
-Auth mode: ${cfg.authMode}.
+Auth mode: ${cfg.authMode}.${hasBothAuthMethods ? '\nDual-auth enabled: pass auth="oauth" to access files shared with the OAuth user, or auth="service_account" (default) for service account access. Omit auth to use the default.' : ''}
 
 IMPORTANT - all tools write data to a local file instead of returning full payloads inline.
 Each response includes: { file, type, count/childCount, sizeBytes, preview }.
@@ -99,6 +105,18 @@ Best practices:
 - Position/size units default to PT (points). Use { x, y } for position and { width, height } for size.
 
 MCP skill resource URI: skill://mcp-google-drive/workflow (markdown; use resources/read).`,
+    ...(hasBothAuthMethods && {
+        globalParams: {
+            auth: { description: 'Auth identity: "oauth" for OAuth user files, "service_account" for SA-shared files. Omit for default (service_account).' },
+        },
+        onToolCall: async (_name: string, args: Record<string, any>, next: () => Promise<any>) => {
+            const mode = args.auth as string | undefined;
+            if (mode && validAuthModes.has(mode)) {
+                return authContext.run(mode as AuthMode, next);
+            }
+            return next();
+        },
+    }),
 });
 
 augmentMcpWithSkillResource(mcp, {
