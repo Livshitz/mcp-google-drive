@@ -38,7 +38,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
             'https://www.googleapis.com/auth/spreadsheets',
             'https://www.googleapis.com/auth/presentations',
         ].join(' '),
-        impersonateEmail: env.AGENT_GMAIL_ADDRESS || env.GMAIL_USER_EMAIL,
+        impersonateEmail: env.GOOGLE_IMPERSONATE_EMAIL,
         serviceAccount: env.GOOGLE_SERVICE_ACCOUNT,
         spreadsheetId: env.GOOGLE_SPREADSHEET_ID,
         tokenPath: env.GOOGLE_TOKEN_PATH || '.mcp-google-drive/token.json',
