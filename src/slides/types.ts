@@ -6,6 +6,18 @@ export interface GetPresentationOptions {
     presentationId: string;
 }
 
+export interface GetSlidesContentOptions {
+    presentationId: string;
+    slideIndex?: number;
+}
+
+export interface GetSlideThumbnailOptions {
+    presentationId: string;
+    pageObjectId?: string;
+    slideIndex?: number;
+    size?: 'SMALL' | 'MEDIUM' | 'LARGE';
+}
+
 export interface AddSlideOptions {
     presentationId: string;
     layout?: PredefinedLayout;

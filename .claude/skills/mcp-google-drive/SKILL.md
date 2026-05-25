@@ -37,6 +37,7 @@ Align implementations with README tool names so docs stay true:
 
 - **Drive**: `get_drive_search`, `get_drive_file`, `get_drive_export`, `get_drive_permissions`.
 - **Sheets**: `get_values`, `get_meta`, `post_append`, `post_update`, `post_batch_update`, `post_clear`, `post_sheets_add`, `post_batch`, `post_headers_ensure`, `get_rows_last`, `get_rows_find`, `get_cache`.
+- **Slides**: `post_slides_create`, `get_slides_get`, `get_slides_content`, `get_slides_thumbnail`, `post_slides_add_slide`, `post_slides_set_text`, `post_slides_insert_text_box`, `post_slides_insert_image`, `post_slides_set_background`, `post_slides_set_speaker_notes`, `post_slides_format_text`, `get_slides_masters`, `post_slides_apply_master`, `post_slides_duplicate`, `post_slides_delete`.
 
 ## Best practices
 

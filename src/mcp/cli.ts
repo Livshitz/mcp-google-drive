@@ -80,6 +80,8 @@ Tools:
 - get_cache: re-open metadata and capped preview for a cached result file.
 - post_slides_create: create a new Google Slides presentation.
 - get_slides_get: get presentation metadata and slide IDs.
+- get_slides_content: read slide text content with formatting (bold, italic, strikethrough, links). Prefer over get_drive_export for formatted content.
+- get_slides_thumbnail: get PNG thumbnail URLs for slides. Use to visually inspect what a slide looks like.
 - post_slides_add_slide: add a slide with optional layout.
 - post_slides_set_text: set text in a slide placeholder (TITLE, SUBTITLE, BODY).
 - post_slides_insert_text_box: insert a positioned text box.

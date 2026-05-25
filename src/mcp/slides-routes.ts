@@ -18,6 +18,24 @@ export function registerSlidesRoutes(rw: RouterWrapper, client: SlidesClient, fi
         return fileCache.write('slides_get', presentationId, data);
     });
 
+    rw.router.get('/slides/content', async (req: IRequest) => {
+        const presentationId = required(q(req.query.presentationId), 'presentationId');
+        const raw = req.query.slideIndex;
+        const slideIndex = raw != null ? Number(q(raw)) : undefined;
+        const data = await client.getSlidesContent({ presentationId, slideIndex });
+        return fileCache.write('slides_content', presentationId, data);
+    });
+
+    rw.router.get('/slides/thumbnail', async (req: IRequest) => {
+        const presentationId = required(q(req.query.presentationId), 'presentationId');
+        const rawIndex = req.query.slideIndex;
+        const slideIndex = rawIndex != null ? Number(q(rawIndex)) : undefined;
+        const pageObjectId = q(req.query.pageObjectId) || undefined;
+        const size = (q(req.query.size) || 'LARGE') as 'SMALL' | 'MEDIUM' | 'LARGE';
+        const data = await client.getSlideThumbnails({ presentationId, slideIndex, pageObjectId, size });
+        return fileCache.write('slides_thumbnail', presentationId, data);
+    });
+
     rw.router.post('/slides/add_slide', async (req: IRequest) => {
         const body = await req.json();
         const data = await client.addSlide({
@@ -142,6 +160,24 @@ export function registerSlidesRoutes(rw: RouterWrapper, client: SlidesClient, fi
         description: 'Get presentation metadata including slide IDs and layouts.',
         params: {
             presentationId: { description: 'Google Slides presentation ID.' },
+        },
+    });
+
+    rw.describeMCP('/slides/content', 'GET', {
+        description: 'Extract structured text content from slides with formatting metadata (bold, italic, strikethrough, links). Use instead of get_slides_get when you need to read what slides say.',
+        params: {
+            presentationId: { description: 'Google Slides presentation ID.' },
+            slideIndex: { description: 'Optional 0-based slide index. Omit to return all slides.' },
+        },
+    });
+
+    rw.describeMCP('/slides/thumbnail', 'GET', {
+        description: 'Get PNG thumbnail URLs for slides. Returns contentUrl (valid ~30min), width, and height. Use to visually inspect slide content. Costly: prefer slideIndex or pageObjectId for single slides.',
+        params: {
+            presentationId: { description: 'Google Slides presentation ID.' },
+            slideIndex: { description: 'Optional 0-based slide index for a single slide.' },
+            pageObjectId: { description: 'Optional page object ID (from get_slides_get). Takes priority over slideIndex.' },
+            size: { description: 'SMALL (200px), MEDIUM (800px), or LARGE (1600px, default).' },
         },
     });
 

@@ -8,6 +8,8 @@ import type {
     FormatTextOptions,
     GetMastersOptions,
     GetPresentationOptions,
+    GetSlidesContentOptions,
+    GetSlideThumbnailOptions,
     InsertImageOptions,
     InsertTextBoxOptions,
     Position,
@@ -49,6 +51,72 @@ export class SlidesClient {
                 layoutId: s.slideProperties?.layoutObjectId,
             })),
         };
+    }
+
+    async getSlidesContent(options: GetSlidesContentOptions) {
+        const data = await this.request(`${SLIDES_BASE}/${enc(options.presentationId)}`);
+        const allSlides: any[] = data.slides || [];
+        if (options.slideIndex != null) {
+            if (options.slideIndex < 0 || options.slideIndex >= allSlides.length) {
+                throw err(`slideIndex ${options.slideIndex} out of range (0-${allSlides.length - 1})`, 400);
+            }
+        }
+        const selected = options.slideIndex != null ? [allSlides[options.slideIndex]] : allSlides;
+        return {
+            presentationId: data.presentationId,
+            title: data.title,
+            url: `https://docs.google.com/presentation/d/${data.presentationId}/edit`,
+            slidesCount: allSlides.length,
+            slides: selected.map((slide: any, i: number) => ({
+                index: options.slideIndex ?? i,
+                objectId: slide.objectId,
+                elements: extractElements(slide.pageElements || []),
+            })),
+        };
+    }
+
+    async getSlideThumbnails(options: GetSlideThumbnailOptions) {
+        const validSizes = new Set(['SMALL', 'MEDIUM', 'LARGE']);
+        const size = options.size || 'LARGE';
+        if (!validSizes.has(size)) throw err(`Invalid size "${size}". Use SMALL, MEDIUM, or LARGE.`, 400);
+        const qs = `?thumbnailProperties.thumbnailSize=${size}&thumbnailProperties.mimeType=PNG`;
+
+        if (options.pageObjectId) {
+            const thumb = await this.request(
+                `${SLIDES_BASE}/${enc(options.presentationId)}/pages/${enc(options.pageObjectId)}/thumbnail${qs}`,
+            );
+            return {
+                presentationId: options.presentationId,
+                thumbnails: [{ pageObjectId: options.pageObjectId, ...thumb }],
+            };
+        }
+
+        const data = await this.request(`${SLIDES_BASE}/${enc(options.presentationId)}`);
+        const allSlides: any[] = data.slides || [];
+
+        if (options.slideIndex != null) {
+            if (options.slideIndex < 0 || options.slideIndex >= allSlides.length) {
+                throw err(`slideIndex ${options.slideIndex} out of range (0-${allSlides.length - 1})`, 400);
+            }
+            const slide = allSlides[options.slideIndex];
+            const thumb = await this.request(
+                `${SLIDES_BASE}/${enc(options.presentationId)}/pages/${enc(slide.objectId)}/thumbnail${qs}`,
+            );
+            return {
+                presentationId: options.presentationId,
+                thumbnails: [{ pageObjectId: slide.objectId, index: options.slideIndex, ...thumb }],
+            };
+        }
+
+        const thumbnails = await Promise.all(
+            allSlides.map(async (slide: any, i: number) => {
+                const thumb = await this.request(
+                    `${SLIDES_BASE}/${enc(options.presentationId)}/pages/${enc(slide.objectId)}/thumbnail${qs}`,
+                );
+                return { pageObjectId: slide.objectId, index: i, ...thumb };
+            }),
+        );
+        return { presentationId: options.presentationId, thumbnails };
     }
 
     async addSlide(options: AddSlideOptions) {
@@ -313,6 +381,42 @@ function buildTextStyleFields(style: TextStyle): string {
     if (style.backgroundColor) fields.push('backgroundColor');
     if (style.link) fields.push('link');
     return fields.join(',');
+}
+
+function classifyPlaceholder(shape: any): string {
+    const type = shape?.placeholder?.type;
+    if (type === 'TITLE' || type === 'CENTERED_TITLE') return 'TITLE';
+    if (type === 'SUBTITLE') return 'SUBTITLE';
+    if (type === 'BODY') return 'BODY';
+    return 'TEXT_BOX';
+}
+
+function extractElements(pageElements: any[]): any[] {
+    const results: any[] = [];
+    for (const el of pageElements) {
+        const textElements = el.shape?.text?.textElements;
+        if (!Array.isArray(textElements)) continue;
+        const textRuns: any[] = [];
+        for (const te of textElements) {
+            if (!te.textRun) continue;
+            const content = te.textRun.content?.replace(/\n$/, '') ?? '';
+            if (!content) continue;
+            textRuns.push({
+                text: content,
+                bold: te.textRun.style?.bold ?? false,
+                italic: te.textRun.style?.italic ?? false,
+                strikethrough: te.textRun.style?.strikethrough ?? false,
+                link: te.textRun.style?.link?.url ?? null,
+            });
+        }
+        if (textRuns.length === 0) continue;
+        results.push({
+            objectId: el.objectId,
+            type: classifyPlaceholder(el.shape),
+            textRuns,
+        });
+    }
+    return results;
 }
 
 function buildElementProperties(pageId: string, pos: Position, size: Size, unit: DimensionUnit) {
