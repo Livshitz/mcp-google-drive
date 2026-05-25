@@ -225,25 +225,43 @@ export class SlidesClient {
     }
 
     async formatText(options: FormatTextOptions) {
-        const textRange: any = options.startIndex != null || options.endIndex != null
-            ? { type: 'FIXED_RANGE', startIndex: options.startIndex ?? 0, endIndex: options.endIndex }
-            : { type: 'ALL' };
+        const hasIndex = options.startIndex != null || options.endIndex != null;
+        const hasMatch = options.match != null;
+        if (hasIndex && hasMatch) throw err('Cannot use both match and startIndex/endIndex', 400);
+        if (hasMatch && !options.match) throw err('match must be a non-empty string', 400);
+
+        let ranges: Array<{ startIndex: number; endIndex: number }>;
+
+        if (hasMatch) {
+            const fullText = await this.getElementText(options.presentationId, options.objectId);
+            if (fullText == null) throw err(`Element ${options.objectId} has no text content`, 404);
+            ranges = findMatchRanges(fullText, options.match!, options.matchAll ?? false);
+            if (ranges.length === 0) {
+                throw err(`Match "${options.match}" not found in element text. Actual: "${fullText.slice(0, 200)}"`, 404);
+            }
+        } else if (hasIndex) {
+            ranges = [{ startIndex: options.startIndex ?? 0, endIndex: options.endIndex! }];
+        } else {
+            const style = buildTextStyle(options.style);
+            const fields = buildTextStyleFields(options.style);
+            await this.batchUpdate(options.presentationId, [{
+                updateTextStyle: { objectId: options.objectId, textRange: { type: 'ALL' }, style, fields },
+            }]);
+            return { objectId: options.objectId, fields };
+        }
 
         const style = buildTextStyle(options.style);
         const fields = buildTextStyleFields(options.style);
-
-        const requests: any[] = [
-            {
-                updateTextStyle: {
-                    objectId: options.objectId,
-                    textRange,
-                    style,
-                    fields,
-                },
+        const requests = ranges.map(range => ({
+            updateTextStyle: {
+                objectId: options.objectId,
+                textRange: { type: 'FIXED_RANGE', startIndex: range.startIndex, endIndex: range.endIndex },
+                style,
+                fields,
             },
-        ];
+        }));
         await this.batchUpdate(options.presentationId, requests);
-        return { objectId: options.objectId, fields };
+        return { objectId: options.objectId, fields, ...(hasMatch && { matchedRanges: ranges }) };
     }
 
     async getMasters(options: GetMastersOptions) {
@@ -307,6 +325,16 @@ export class SlidesClient {
         return { deleted: options.slideId };
     }
 
+    private async getElementText(presentationId: string, objectId: string): Promise<string | null> {
+        const data = await this.request(`${SLIDES_BASE}/${enc(presentationId)}`);
+        for (const slide of data.slides || []) {
+            for (const el of slide.pageElements || []) {
+                if (el.objectId === objectId) return extractRawText(el);
+            }
+        }
+        return null;
+    }
+
     private async batchUpdate(presentationId: string, requests: any[]) {
         return await this.request(`${SLIDES_BASE}/${enc(presentationId)}:batchUpdate`, {
             method: 'POST',
@@ -355,6 +383,29 @@ function hasText(element: any): boolean {
     const content = element?.shape?.text?.textElements;
     if (!Array.isArray(content)) return false;
     return content.some((te: any) => te.textRun?.content?.trim());
+}
+
+function extractRawText(element: any): string | null {
+    const textElements = element?.shape?.text?.textElements;
+    if (!Array.isArray(textElements)) return null;
+    let text = '';
+    for (const te of textElements) {
+        if (te.textRun?.content) text += te.textRun.content;
+    }
+    return text || null;
+}
+
+function findMatchRanges(fullText: string, match: string, matchAll: boolean): Array<{ startIndex: number; endIndex: number }> {
+    const ranges: Array<{ startIndex: number; endIndex: number }> = [];
+    let from = 0;
+    while (from <= fullText.length - match.length) {
+        const idx = fullText.indexOf(match, from);
+        if (idx === -1) break;
+        ranges.push({ startIndex: idx, endIndex: idx + match.length });
+        if (!matchAll) break;
+        from = idx + match.length;
+    }
+    return ranges;
 }
 
 function buildTextStyle(style: TextStyle): any {

@@ -109,6 +109,8 @@ export interface FormatTextOptions {
     objectId: string;
     startIndex?: number;
     endIndex?: number;
+    match?: string;
+    matchAll?: boolean;
     style: TextStyle;
 }
 

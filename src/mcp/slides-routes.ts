@@ -108,6 +108,8 @@ export function registerSlidesRoutes(rw: RouterWrapper, client: SlidesClient, fi
             objectId: required(body.objectId, 'objectId'),
             startIndex: body.startIndex ?? undefined,
             endIndex: body.endIndex ?? undefined,
+            match: body.match ?? undefined,
+            matchAll: body.matchAll ?? undefined,
             style: body.style || {},
         });
         return fileCache.write('slides_format_text', `${body.presentationId}_${body.objectId}`, data);
@@ -224,9 +226,9 @@ export function registerSlidesRoutes(rw: RouterWrapper, client: SlidesClient, fi
     });
 
     rw.describeMCP('/slides/format_text', 'POST', {
-        description: 'Format text in a shape/text box. Apply bold, italic, font size, color, etc. Use objectId from set_text or insert_text_box responses.',
+        description: 'Format text in a shape/text box. Two modes: (1) index-based with startIndex/endIndex, or (2) text-match with match string (server resolves indices). Prefer match mode — index-based is error-prone for Unicode text.',
         params: {
-            body: { description: 'Object with presentationId, objectId, optional startIndex/endIndex (omit for all text), style { bold?, italic?, underline?, fontSize? (PT), fontFamily?, foregroundColor? { red, green, blue } (0-1), backgroundColor?, link? (URL) }.' },
+            body: { description: 'Object with presentationId, objectId. Either startIndex/endIndex (omit both for all text) OR match (string to find) + optional matchAll (boolean, default false). style { bold?, italic?, underline?, fontSize? (PT), fontFamily?, foregroundColor? { red, green, blue } (0-1), backgroundColor?, link? (URL) }.' },
         },
     });
 

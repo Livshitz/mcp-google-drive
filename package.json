@@ -1,6 +1,6 @@
 {
   "name": "@livx.cc/mcp-google-drive",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Google Drive and Sheets MCP server and reusable library",
   "license": "MIT",
   "engines": {
