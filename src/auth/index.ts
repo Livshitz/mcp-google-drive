@@ -14,7 +14,9 @@ export async function getAccessToken(cfg: Config): Promise<string> {
     if (mode === 'oauth') return await getOAuthAccessToken(cfg);
 
     // auto: prefer OAuth (operator files), fall back to SA
-    try { return await getOAuthAccessToken(cfg); } catch {}
+    try { return await getOAuthAccessToken(cfg); } catch (err) {
+        console.warn('[auth] OAuth failed, falling back to SA:', (err as Error).message);
+    }
     if (cfg.serviceAccount) return await getServiceAccountAccessToken(cfg.serviceAccount, cfg.scopes, cfg.impersonateEmail);
     throw new Error('No auth method available — configure OAuth or GOOGLE_SERVICE_ACCOUNT.');
 }
