@@ -13,9 +13,10 @@ export async function getAccessToken(cfg: Config): Promise<string> {
 
     if (mode === 'oauth') return await getOAuthAccessToken(cfg);
 
-    // auto: prefer SA if available, fall back to OAuth
+    // auto: prefer OAuth (operator files), fall back to SA
+    try { return await getOAuthAccessToken(cfg); } catch {}
     if (cfg.serviceAccount) return await getServiceAccountAccessToken(cfg.serviceAccount, cfg.scopes, cfg.impersonateEmail);
-    return await getOAuthAccessToken(cfg);
+    throw new Error('No auth method available — configure OAuth or GOOGLE_SERVICE_ACCOUNT.');
 }
 
 export { createOAuthToken } from './oauth.ts';

@@ -109,7 +109,7 @@ Best practices:
 MCP skill resource URI: skill://mcp-google-drive/workflow (markdown; use resources/read).`,
     ...(hasBothAuthMethods && {
         globalParams: {
-            auth: { description: 'Auth identity: "oauth" for OAuth user files, "service_account" for SA-shared files. Omit for default (service_account).' },
+            auth: { description: 'Auth identity: "oauth" for OAuth user files, "service_account" for SA-shared files. Omit for default (oauth).' },
         },
         onToolCall: async (_name: string, args: Record<string, any>, next: () => Promise<any>) => {
             const mode = args.auth as string | undefined;
