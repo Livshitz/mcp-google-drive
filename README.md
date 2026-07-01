@@ -101,6 +101,16 @@ REST: http://localhost:3458/api/drive/search
 MCP:  http://localhost:3458/api/mcp
 ```
 
+## Add to your MCP host
+
+Wire the server into an MCP host (Claude Code, Cursor, …) by adding it to your `.mcp.json` (or run `claude mcp add`), launching it from your local clone:
+
+```json
+{ "mcpServers": { "google-drive": { "command": "bun", "args": ["run", "/abs/path/to/mcp-google-drive/src/mcp/cli.ts", "--stdio"], "env": { "GOOGLE_AUTH_MODE": "service_account", "GOOGLE_SERVICE_ACCOUNT": "./service-account.json" } } } }
+```
+
+> npm package coming soon — run from source for now.
+
 ## Cursor Config
 
 The repo includes `.cursor/mcp.json`:
