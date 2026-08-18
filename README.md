@@ -75,8 +75,12 @@ Default scopes:
 ```text
 https://www.googleapis.com/auth/drive.metadata.readonly
 https://www.googleapis.com/auth/drive.readonly
+https://www.googleapis.com/auth/drive
 https://www.googleapis.com/auth/spreadsheets
+https://www.googleapis.com/auth/presentations
 ```
+
+`auth/drive` (full Drive) is what allows creating and replying to comments; drop it if you only need reads.
 
 Override with `GOOGLE_SCOPES` if you need a narrower or broader set.
 
@@ -135,6 +139,9 @@ The repo includes `.cursor/mcp.json`:
 - `get_drive_file` - read metadata for a file.
 - `get_drive_permissions` - list visible permissions for a file.
 - `get_drive_export` - export Google Docs/Slides/etc. to a text MIME type.
+- `get_drive_comments` - list comment threads (replies, resolved state, quoted text).
+- `post_drive_comments` - create a comment; pass `quotedText` to anchor it to a phrase in a Doc.
+- `post_drive_comments_reply` - reply to a thread, and/or `action: resolve | reopen` it.
 
 Examples:
 
@@ -148,6 +155,12 @@ curl -sS 'http://localhost:3458/api/drive/file?fileId=...'
 
 ```bash
 curl -sS 'http://localhost:3458/api/drive/export?fileId=...&mimeType=text/plain'
+```
+
+```bash
+curl -sS 'http://localhost:3458/api/drive/comments?fileId=...'
+curl -sS -XPOST 'http://localhost:3458/api/drive/comments' -H 'content-type: application/json' \
+  -d '{"fileId":"...","content":"nit: this number is stale","quotedText":"789 subscribers"}'
 ```
 
 `get_drive_export` currently accepts text exports only, such as `text/plain`, `text/html`, or `text/csv`. Binary exports like PDF are intentionally rejected so large binary payloads are not pushed through JSON.
