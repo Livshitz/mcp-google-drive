@@ -36,7 +36,7 @@ const slidesClient = new SlidesClient(tokenProvider);
 const fileCache = new FileCache(process.env.MCP_CACHE_DIR || resolve(repoRoot, cfg.cacheDir));
 
 const rw = RouterWrapper.getNew('/api');
-registerDriveRoutes(rw, driveClient, fileCache);
+registerDriveRoutes(rw, driveClient, fileCache, cfg);
 registerMcpRoutes(rw, sheetsClient, fileCache, cfg);
 registerSlidesRoutes(rw, slidesClient, fileCache);
 

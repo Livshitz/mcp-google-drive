@@ -1,6 +1,7 @@
-import type { ExportFileOptions, GetFileOptions, SearchFilesOptions } from './types.ts';
+import type { CreateCommentOptions, ExportFileOptions, GetFileOptions, ListCommentsOptions, ReplyCommentOptions, SearchFilesOptions } from './types.ts';
 
 const DRIVE_BASE = 'https://www.googleapis.com/drive/v3';
+const COMMENT_FIELDS = 'comments(id,content,htmlContent,author(displayName,emailAddress),createdTime,modifiedTime,resolved,deleted,anchor,quotedFileContent,replies(id,content,author(displayName,emailAddress),createdTime,action)),nextPageToken';
 const DEFAULT_FIELDS = 'nextPageToken,files(id,name,mimeType,webViewLink,modifiedTime,createdTime,owners(displayName,emailAddress),shared,parents,size)';
 
 export class DriveClient {
@@ -30,6 +31,33 @@ export class DriveClient {
         url.searchParams.set('fields', 'permissions(id,type,emailAddress,role,displayName,domain,deleted)');
         url.searchParams.set('supportsAllDrives', 'true');
         return await this.request(url);
+    }
+
+    async listComments(options: ListCommentsOptions) {
+        const url = new URL(`${DRIVE_BASE}/files/${encodeURIComponent(options.fileId)}/comments`);
+        url.searchParams.set('fields', COMMENT_FIELDS);
+        url.searchParams.set('pageSize', String(Math.min(Math.max(options.pageSize || 100, 1), 100)));
+        if (options.includeDeleted) url.searchParams.set('includeDeleted', 'true');
+        if (options.pageToken) url.searchParams.set('pageToken', options.pageToken);
+        return await this.request(url);
+    }
+
+    async createComment(options: CreateCommentOptions) {
+        const url = new URL(`${DRIVE_BASE}/files/${encodeURIComponent(options.fileId)}/comments`);
+        url.searchParams.set('fields', '*');
+        const body: Record<string, any> = { content: options.content };
+        if (options.anchor) body.anchor = options.anchor;
+        if (options.quotedText) body.quotedFileContent = { value: options.quotedText };
+        return await this.request(url, { method: 'POST', body });
+    }
+
+    async replyToComment(options: ReplyCommentOptions) {
+        const url = new URL(`${DRIVE_BASE}/files/${encodeURIComponent(options.fileId)}/comments/${encodeURIComponent(options.commentId)}/replies`);
+        url.searchParams.set('fields', '*');
+        const body: Record<string, any> = {};
+        if (options.content) body.content = options.content;
+        if (options.action) body.action = options.action;
+        return await this.request(url, { method: 'POST', body });
     }
 
     async exportFile(options: ExportFileOptions) {

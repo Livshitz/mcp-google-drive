@@ -35,6 +35,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
         scopes: env.GOOGLE_SCOPES || [
             'https://www.googleapis.com/auth/drive.metadata.readonly',
             'https://www.googleapis.com/auth/drive.readonly',
+            'https://www.googleapis.com/auth/drive', // full Drive — required to create/reply to comments
             'https://www.googleapis.com/auth/spreadsheets',
             'https://www.googleapis.com/auth/presentations',
         ].join(' '),

@@ -5,6 +5,7 @@ import { JwtHelper } from 'edge.libx.js/build/helpers/jwt.js';
 export const DEFAULT_GOOGLE_SCOPES = [
     'https://www.googleapis.com/auth/drive.metadata.readonly',
     'https://www.googleapis.com/auth/drive.readonly',
+    'https://www.googleapis.com/auth/drive', // full Drive — required to create/reply to comments
     'https://www.googleapis.com/auth/spreadsheets',
 ].join(' ');
 

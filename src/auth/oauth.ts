@@ -89,7 +89,12 @@ export async function createOAuthToken(cfg: Config): Promise<string> {
 
         server.listen(port, () => {
             console.log(`Open this URL to authorize Google Drive access:\n${authUrl.toString()}`);
-            Bun.spawn(['open', authUrl.toString()]);
+            // Best-effort browser launch — headless/remote boxes have no opener, and a missing
+            // binary must not kill the flow: the URL above is enough to authorize from anywhere.
+            const opener = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
+            try { Bun.spawn([opener, authUrl.toString()], { stdout: 'ignore', stderr: 'ignore' }); } catch (err) {
+                console.warn(`[auth] could not open a browser (${(err as Error).message}) — open the URL above manually.`);
+            }
         });
     });
 
