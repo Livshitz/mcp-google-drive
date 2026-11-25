@@ -1,6 +1,6 @@
 /**
  * What a Drive API comment really became, read from Google's own response, plus the API route that
- * DOES anchor in that editor, so callers take it instead of driving the editor UI by browser.
+ * DOES anchor in that editor, so callers prefer it over driving the editor UI.
  * Single source of this rule; descriptions/README/skills point here instead of restating it.
  * Sources: Drive manage-comments guide (Docs/Sheets/Slides treat Drive comments as unanchored);
  * Sheets guides/comments (spreadsheets.batchUpdate insertComment); Docs how-tos/suggestions
@@ -25,7 +25,6 @@ export function describeCommentLimits(mimeType: string | undefined, content: str
     const notes = [
         editor && `Unanchored: the ${editor} editor ignores Drive API anchors, so this comment sits in the file comment list ("Original content deleted"), not on a cell/range. ${ANCHORED_ROUTE[editor]}`,
         missing.length && `Not registered as mentions by Google: ${missing.join(', ')}; no notification is guaranteed for them.`,
-        'If no API route does what the user needs, report this and ask; never redo it through the editor UI/browser automation on a shared file.',
     ].filter(Boolean) as string[];
     return { mimeType, anchored: !editor && !!comment?.anchor, mentionsRequested: requested, mentionsRegistered: mentioned, notes };
 }

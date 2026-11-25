@@ -5,7 +5,7 @@ import { SheetsClient, parseA1Cell } from '../src/sheets/client.ts';
 const SHEET = 'application/vnd.google-apps.spreadsheet';
 
 describe('describeCommentLimits', () => {
-    it('Sheets: unanchored + points to post_cell_comment, never to a note or the UI', () => {
+    it('Sheets: unanchored + points to post_cell_comment, not to a note', () => {
         const l = describeCommentLimits(SHEET, 'hi', { anchor: '{"r":1}' });
         expect(l.anchored).toBe(false);
         expect(l.notes[0]).toContain('post_cell_comment');
