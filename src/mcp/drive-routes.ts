@@ -4,6 +4,7 @@ import type { Config } from '../config.ts';
 import type { DriveClient } from '../drive/client.ts';
 import type { FileCache } from './file-cache.ts';
 import { q, required } from './utils.ts';
+import { describeCommentLimits } from '../drive/comment-limits.ts';
 
 function guardWrite(cfg: Config): void {
     if (cfg.readOnly) {
@@ -95,13 +96,12 @@ export function registerDriveRoutes(rw: RouterWrapper, client: DriveClient, file
     rw.router.post('/drive/comments', async (req: IRequest) => {
         guardWrite(cfg);
         const body = await req.json();
-        const data = await client.createComment({
-            fileId: required(body.fileId, 'fileId'),
-            content: required(body.content, 'content'),
-            anchor: body.anchor,
-            quotedText: body.quotedText,
-        });
-        return fileCache.write('drive_comment_create', body.fileId, data);
+        const fileId = required(body.fileId, 'fileId');
+        const content = required(body.content, 'content');
+        const { mimeType } = await client.getFile({ fileId, fields: 'mimeType' });
+        const data = await client.createComment({ fileId, content, anchor: body.anchor, quotedText: body.quotedText });
+        const limits = describeCommentLimits(mimeType, content, data);
+        return { ...fileCache.write('drive_comment_create', fileId, { ...data, limits }), limits };
     });
 
     rw.router.post('/drive/comments/reply', async (req: IRequest) => {
@@ -128,12 +128,12 @@ export function registerDriveRoutes(rw: RouterWrapper, client: DriveClient, file
     });
 
     rw.describeMCP('/drive/comments', 'POST', {
-        description: 'Create a comment on a Drive file. Pass quotedText to anchor it to a phrase in a Google Doc (Docs shows it as the quoted context). Requires the https://www.googleapis.com/auth/drive scope.',
+        description: 'Create a file-level Drive comment. In Docs/Sheets/Slides it lands UNANCHORED; for a comment ON a Sheets cell use post_cell_comment instead. The result `limits` names the anchored route per editor and which +email mentions Google registered. Requires the https://www.googleapis.com/auth/drive scope.',
         params: {
             fileId: { description: 'Google Drive file ID.' },
             content: { description: 'Comment body (plain text).' },
             quotedText: { description: 'Text the comment refers to, shown as the quoted context.' },
-            anchor: { description: 'Optional raw Drive anchor JSON string for region anchoring.' },
+            anchor: { description: 'Optional raw Drive anchor JSON string. Ignored by Docs/Sheets/Slides (unanchored there).' },
         },
     });
 

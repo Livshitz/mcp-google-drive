@@ -140,7 +140,8 @@ The repo includes `.cursor/mcp.json`:
 - `get_drive_permissions` - list visible permissions for a file.
 - `get_drive_export` - export Google Docs/Slides/etc. to a text MIME type.
 - `get_drive_comments` - list comment threads (replies, resolved state, quoted text).
-- `post_drive_comments` - create a comment; pass `quotedText` to anchor it to a phrase in a Doc.
+- `post_drive_comments` - create a file-level comment (unanchored in Docs/Sheets/Slides); the result `limits` names the anchored route per editor and which `+email` mentions Google registered.
+- `post_cell_comment` - anchored comment ON a Sheets cell (`cell: Sheet1!B2`, optional `assigneeEmailAddress`), via Sheets API `insertComment`.
 - `post_drive_comments_reply` - reply to a thread, and/or `action: resolve | reopen` it.
 
 Examples:

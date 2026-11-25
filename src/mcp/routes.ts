@@ -105,6 +105,19 @@ export function registerMcpRoutes(rw: RouterWrapper, client: SheetsClient, fileC
         return fileCache.write('batch', spreadsheetId, data);
     });
 
+    rw.router.post('/cell/comment', async (req: IRequest) => {
+        guardWrite(cfg);
+        const body = await req.json();
+        const spreadsheetId = required(body.spreadsheetId || cfg.spreadsheetId, 'spreadsheetId');
+        const data = await client.insertCellComment({
+            spreadsheetId,
+            cell: required(body.cell, 'cell'),
+            content: required(body.content, 'content'),
+            assigneeEmailAddress: body.assigneeEmailAddress,
+        });
+        return fileCache.write('cell_comment', `${spreadsheetId}_${body.cell}`, data);
+    });
+
     rw.router.post('/headers/ensure', async (req: IRequest) => {
         guardWrite(cfg);
         const body = await req.json();
@@ -200,6 +213,16 @@ export function registerMcpRoutes(rw: RouterWrapper, client: SheetsClient, fileC
         description: 'Run raw Sheets spreadsheets.batchUpdate structural requests such as formatting, resizing, freezing rows, or adding sheets. Body: { spreadsheetId?, requests }.',
         params: {
             body: { description: 'Object with spreadsheetId? (optional when configured) and a Sheets API requests array.' },
+        },
+    });
+
+    rw.describeMCP('/cell/comment', 'POST', {
+        description: 'Put a real, anchored comment ON a Google Sheets cell (Sheets API insertComment; shows on the cell like a human comment). Use this, not post_drive_comments, for Sheets. Fails loudly unless Google reports commentUpdateState=ALL_SAVED.',
+        params: {
+            spreadsheetId: { description: 'Spreadsheet ID. Optional when GOOGLE_SPREADSHEET_ID is configured.' },
+            cell: { description: "Single A1 cell, e.g. Sheet1!B2 or 'My tab'!B2 (no tab = first sheet)." },
+            content: { description: 'Comment text (plain).' },
+            assigneeEmailAddress: { description: 'Optional: assign the comment to this email (assigns it; whether Google notifies the assignee is not verified).' },
         },
     });
 

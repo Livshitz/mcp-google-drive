@@ -32,6 +32,14 @@ export interface StructuralBatchUpdateOptions {
     requests: any[];
 }
 
+export interface InsertCellCommentOptions {
+    spreadsheetId: string;
+    /** A1 cell, e.g. `Sheet1!B2` or `'My tab'!B2`; no tab = the first sheet. */
+    cell: string;
+    content: string;
+    assigneeEmailAddress?: string;
+}
+
 export interface AddSheetOptions {
     spreadsheetId: string;
     title: string;

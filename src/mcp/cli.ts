@@ -75,6 +75,7 @@ Tools:
 - post_sheets_add: create a new sheet/tab.
 - post_batch: run raw structural spreadsheets.batchUpdate requests.
 - post_headers_ensure: create or validate first-row headers.
+- post_cell_comment: anchored comment ON a Sheets cell (Drive comments land unanchored in Sheets).
 - get_rows_last: read back the last N rows from a range for dedupe checks.
 - get_rows_find: find exact row matches by header name or column index.
 - get_cache: re-open metadata and capped preview for a cached result file.

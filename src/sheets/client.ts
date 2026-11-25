@@ -5,6 +5,7 @@ import type {
     EnsureHeadersOptions,
     FindRowsOptions,
     GetValuesOptions,
+    InsertCellCommentOptions,
     LastRowsOptions,
     StructuralBatchUpdateOptions,
     WriteValuesOptions,
@@ -82,6 +83,20 @@ export class SheetsClient {
             method: 'POST',
             body: { requests: options.requests },
         });
+    }
+
+    /** An anchored comment ON a cell (Sheets API insertComment); Drive comments.create cannot anchor in Sheets. */
+    async insertCellComment(options: InsertCellCommentOptions) {
+        const { sheetTitle, rowIndex, columnIndex } = parseA1Cell(options.cell);
+        const sheets: any[] = (await this.getMeta(options.spreadsheetId)).sheets || [];
+        const sheet = sheetTitle == null ? sheets[0] : sheets.find((s) => s.properties?.title === sheetTitle);
+        if (!sheet) throw new Error(`Sheet not found: ${sheetTitle ?? '(first sheet)'}`);
+        const coordinate = { sheetId: sheet.properties.sheetId, rowIndex, columnIndex };
+        const insertComment = { content: options.content, coordinate, ...(options.assigneeEmailAddress && { assigneeEmailAddress: options.assigneeEmailAddress }) };
+        const data = await this.structuralBatchUpdate({ spreadsheetId: options.spreadsheetId, requests: [{ insertComment }] });
+        // A comment save can fail while the batch still returns 200 (Google: commentUpdateState).
+        if (data?.commentUpdateState !== 'ALL_SAVED') throw Object.assign(new Error(`insertComment not saved: commentUpdateState=${data?.commentUpdateState}`), { details: data });
+        return { commentId: data.replies?.[0]?.insertComment?.commentThread?.commentId, coordinate, ...data };
     }
 
     async addSheet(options: AddSheetOptions) {
@@ -204,6 +219,14 @@ export class SheetsClient {
 
 function quoteSheetName(name: string): string {
     return `'${name.replace(/'/g, "''")}'`;
+}
+
+/** `Sheet1!B2` / `'My tab'!B2` / `B2` → zero-based grid coordinate (sheetTitle undefined when omitted). */
+export function parseA1Cell(cell: string): { sheetTitle?: string; rowIndex: number; columnIndex: number } {
+    const m = /^(?:(?:'((?:[^']|'')+)'|([^!']+))!)?\$?([A-Za-z]{1,3})\$?(\d+)$/.exec(cell.trim());
+    if (!m || Number(m[4]) < 1) throw new Error(`Not a single A1 cell: ${cell} (e.g. Sheet1!B2)`);
+    const columnIndex = [...m[3].toUpperCase()].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+    return { sheetTitle: m[1]?.replace(/''/g, "'") ?? m[2], rowIndex: Number(m[4]) - 1, columnIndex };
 }
 
 function columnName(index: number): string {
